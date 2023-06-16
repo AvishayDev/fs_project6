@@ -18,11 +18,39 @@ const hostname = '127.0.0.1';
 const port = process.env.PORT || 3000;
 
 // Validation Schema
-const postSchema = Joi.object({
-    userId: Joi.string().required(),
-    title: Joi.string().min(3).max(512).required(),
-    body: Joi.string().min(3).max(512).required()
-});
+const validationSchema = {
+    'posts': Joi.object({
+        userId: Joi.number().integer().min(1).required(),
+        title: Joi.string().min(3).max(80).required(),
+        body: Joi.string().min(3).max(512).required()
+    }),
+    'users': Joi.object({
+        username: Joi.string().alphanum().min(3).max(50).required(),
+        api_key: Joi.string().alphanum().min(20).required(),
+        rank: Joi.string().alphanum().min(1).required(),
+        name: Joi.string().alphanum().min(3).max(50),
+        email: Joi.string().pattern(new RegExp('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')),
+        phone: Joi.string().pattern(new RegExp('^\+*[0-9]{10,13}$')),
+        website: Joi.string().pattern(new RegExp('^((https?|ftp):\/\/)?[^\s/$.?#].[^\s]*$'))
+    }),
+    'comments': Joi.object({
+        poatId: Joi.number().integer().min(1).required(),
+        title: Joi.string().min(3).max(80).required(),
+        completed: Joi.boolean().required()
+    }),
+    'todos': Joi.object({
+        userId: Joi.number().integer().min(1).required(),
+        name: Joi.string().min(3).max(50).required(),
+        body: Joi.string().min(3).max(512).required(),
+        email: Joi.string().pattern(new RegExp('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')).required()
+    }),
+    'passwords': Joi.object({
+        username: Joi.string().alphanum().min(3).max(50).required(),
+        password: Joi.string().alphanum().min(8).max(32).required()
+    })
+
+}
+
 
 const Validate = (testObject,validateType) => {
     //const {error} = 
@@ -244,7 +272,6 @@ app.get('/login', (req,res) =>{
             if (result.length === 0) return res.status(404).send('Usename or Password is Not Currect')
 
             res.send(result);
-                
     });
 });
 

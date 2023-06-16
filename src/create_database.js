@@ -109,21 +109,20 @@ function generateRandomString(length) {
 var con = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "AvishayDEV19",
+    password: "your-password",
     port: 3306,
-    database: 'FullStackProject6'
+    //database: 'FullStackProject6'
   });
   
 con.connect(async function(err) {
     if (err) throw err;
     console.log("Connected!");
 
-    
-    var sql = 'SELECT * FROM todos LIMIT 1';
-    con.query(sql, function (err, result) {
-      if (err) throw (err)
-      console.log(result);
-    });
+    // con.query("SELECT api_key FROM users", function (err, result) {
+    //   if (err) throw err;
+    //   console.log(result);
+    // });
+    // return;
     
     // con.query("DROP DATABASE FullStackProject6", function (err, result) {
     //     if (err) throw err;
@@ -138,115 +137,115 @@ con.connect(async function(err) {
 
     //  return;
 
-    // const convertTypes = {'number': 'INT','string':'VARCHAR(511)','boolean':'BOOLEAN'}
-    // const tableNames = ['users','posts','todos','comments']
-    // // loop through the list:
-    // for (const tableName of tableNames){
-    //     // make api call to jsonplaceholder
-    //     let data = await getDataJPH(tableName)
-    //     data = JSON.parse(data)
+    const convertTypes = {'number': 'INT','string':'VARCHAR(511)','boolean':'BOOLEAN'}
+    const tableNames = ['users','posts','todos','comments']
+    // loop through the list:
+    for (const tableName of tableNames){
+        // make api call to jsonplaceholder
+        let data = await getDataJPH(tableName)
+        data = JSON.parse(data)
 
-    //     // set string to create table
-    //     let sql = `CREATE TABLE ${tableName} (`
-    //     const instanceExample = data[0]
-    //     Object.entries(instanceExample).forEach(([key, value]) => {
-    //         const value_type = typeof(value)
-    //         if (value_type === 'number' || value_type === 'string' || value_type === 'boolean')
-    //             sql += `${key} ${convertTypes[value_type]},`
-    //     });
-    //     sql = sql.slice(0, -1) + ')';
+        // set string to create table
+        let sql = `CREATE TABLE ${tableName} (`
+        const instanceExample = data[0]
+        Object.entries(instanceExample).forEach(([key, value]) => {
+            const value_type = typeof(value)
+            if (value_type === 'number' || value_type === 'string' || value_type === 'boolean')
+                sql += `${key} ${convertTypes[value_type]},`
+        });
+        sql = sql.slice(0, -1) + ')';
 
-    //     con.query(sql, function (err, result) {
-    //         if (err) throw err;
-    //         console.log(result);
-    //     });
+        con.query(sql, function (err, result) {
+            if (err) throw err;
+            console.log(result);
+        });
 
-    //     // set string to insert into the table
-    //     sql = `INSERT INTO ${tableName} (`
-    //     Object.entries(instanceExample).forEach(([key, value]) => {
-    //         const value_type = typeof(value)
-    //         if (value_type === 'number' || value_type === 'string'|| value_type === 'boolean' )
-    //             sql += `${key},`
-    //     });
-    //     sql = sql.slice(0, -1) + ') VALUES ?';
-    //     // set values for the table
-    //     const values = data.map((instance) => {
-    //         return Object.values(instance).filter(value => (typeof(value) === 'number' || typeof(value) === 'string' || typeof(value) === 'boolean'));
-    //     })
-    //     // make a query
-    //     con.query(sql, [values], function (err, result) {
-    //     if (err) throw err;
-    //     console.log("Number of records inserted: " + result.affectedRows);
-    //     });
-    // }
+        // set string to insert into the table
+        sql = `INSERT INTO ${tableName} (`
+        Object.entries(instanceExample).forEach(([key, value]) => {
+            const value_type = typeof(value)
+            if (value_type === 'number' || value_type === 'string'|| value_type === 'boolean' )
+                sql += `${key},`
+        });
+        sql = sql.slice(0, -1) + ') VALUES ?';
+        // set values for the table
+        const values = data.map((instance) => {
+            return Object.values(instance).filter(value => (typeof(value) === 'number' || typeof(value) === 'string' || typeof(value) === 'boolean'));
+        })
+        // make a query
+        con.query(sql, [values], function (err, result) {
+        if (err) throw err;
+        console.log("Number of records inserted: " + result.affectedRows);
+        });
+    }
 
-    // // Create user-password Table
-    // con.query("SELECT id, username FROM users", async function (err, result, fields) {
-    //   if (err) throw err;
-    //   result = result.map(value => { return {...value, password:generateRandomString(8)}})
-    //   let sql = "CREATE TABLE passwords (id INT, username VARCHAR(511), password VARCHAR(32))";
-    //   con.query(sql, function (err, result2) {
-    //       if (err) throw err;
+    // Create user-password Table
+    con.query("SELECT id, username FROM users", async function (err, result, fields) {
+      if (err) throw err;
+      result = result.map(value => { return {...value, password:generateRandomString(8)}})
+      let sql = "CREATE TABLE passwords (id INT, username VARCHAR(511), password VARCHAR(32))";
+      con.query(sql, function (err, result2) {
+          if (err) throw err;
           
-    //       sql = 'INSERT INTO passwords ('
-    //       Object.entries(result[0]).forEach(([key, value]) => {
-    //         sql += `${key},`
-    //       });
-    //       sql = sql.slice(0, -1) + ') VALUES ?';
-    //       // set values for the table
-    //       const values = result.map((instance) => {
-    //           return Object.values(instance);
-    //       })
-    //       // make a query
-    //       con.query(sql, [values], function (err, result3) {
-    //         if (err) throw err;
-    //         console.log("Number of records inserted: " + result.affectedRows);
-    //       });
-    //   });
+          sql = 'INSERT INTO passwords ('
+          Object.entries(result[0]).forEach(([key, value]) => {
+            sql += `${key},`
+          });
+          sql = sql.slice(0, -1) + ') VALUES ?';
+          // set values for the table
+          const values = result.map((instance) => {
+              return Object.values(instance);
+          })
+          // make a query
+          con.query(sql, [values], function (err, result3) {
+            if (err) throw err;
+            console.log("Number of records inserted: " + result.affectedRows);
+          });
+      });
 
-    //   // Fix Signs To Columns
+      // Fix Signs To Columns
 
-    //   // modify id
-    //   tableNames.push('passwords');
-    //   const tablesVarchar = 'VARCHAR(511)';
-    //   const tablesInt = 'INT'
+      // modify id
+      tableNames.push('passwords');
+      const tablesVarchar = 'VARCHAR(511)';
+      const tablesInt = 'INT'
 
-    //   tableNames.forEach((tableName) => {
-    //     modifyColumn(tableName,'id',[tablesInt, 'AUTO_INCREMENT', 'PRIMARY KEY'])
-    //   });
+      tableNames.forEach((tableName) => {
+        modifyColumn(tableName,'id',[tablesInt, 'AUTO_INCREMENT', 'PRIMARY KEY'])
+      });
 
-    //   // users
-    //   let tableName = 'users'
-    //   await addColumn(tableName,'`rank`',Array(10).fill('user'),'VARCHAR(20)')
-    //   await addColumn(tableName,'api_key',Array(10).fill().map(() => generateRandomString(20)),'VARCHAR(20)')
-    //   modifyColumn(tableName,'api_key',['VARCHAR(20)', 'UNIQUE', 'NOT NULL'])
-    //   modifyColumn(tableName,'username',[tablesVarchar, 'UNIQUE', 'NOT NULL'])
-    //   modifyColumn(tableName,'`rank`',['VARCHAR(20)', 'NOT NULL'])
+      // users
+      let tableName = 'users'
+      await addColumn(tableName,'`rank`',Array(10).fill('user'),'VARCHAR(20)')
+      await addColumn(tableName,'api_key',Array(10).fill().map(() => generateRandomString(20)),'VARCHAR(20)')
+      modifyColumn(tableName,'api_key',['VARCHAR(20)', 'UNIQUE', 'NOT NULL'])
+      modifyColumn(tableName,'username',[tablesVarchar, 'UNIQUE', 'NOT NULL'])
+      modifyColumn(tableName,'`rank`',['VARCHAR(20)', 'NOT NULL'])
 
-    //   // posts
-    //   tableName = 'posts'
-    //   Array('title', 'body').forEach((columnName) => modifyColumn(tableName,columnName, [tablesVarchar, 'NOT NULL']))
-    //   modifyColumn(tableName,'userId',[tablesInt, 'NOT NULL'])
-    //   addForeignKey(tableName,'postUserId','userId','users','id')
+      // posts
+      tableName = 'posts'
+      Array( 'title', 'body').forEach((columnName) => modifyColumn(tableName,columnName, [tablesVarchar, 'NOT NULL']))
+      modifyColumn(tableName,'userId',[tablesInt, 'NOT NULL'])
+      addForeignKey(tableName,'postUserId','userId','users','id')
 
-    //   // todos
-    //   tableName = 'todos'
-    //   modifyColumn(tableName,'title',[tablesVarchar, 'NOT NULL'])
-    //   modifyColumn(tableName,'userId',[tablesInt, 'NOT NULL'])
-    //   modifyColumn(tableName,'completed',['BOOLEAN', 'NOT NULL', 'default 0'])
-    //   addForeignKey(tableName,'todosUserId','userId','users','id')
+      // todos
+      tableName = 'todos'
+      modifyColumn(tableName,'title',[tablesVarchar, 'NOT NULL'])
+      modifyColumn(tableName,'userId',[tablesInt, 'NOT NULL'])
+      modifyColumn(tableName,'completed',['BOOLEAN', 'NOT NULL', 'default 0'])
+      addForeignKey(tableName,'todosUserId','userId','users','id')
 
-    //   // comments
-    //   tableName = 'comments'
-    //   Array('name', 'body', 'email').forEach((columnName) => modifyColumn(tableName,columnName,[tablesVarchar, 'NOT NULL']))
-    //   modifyColumn(tableName, 'postId', [tablesInt,'NOT NULL'])
-    //   addForeignKey(tableName,'commentPostId','postId','posts','id')
+      // comments
+      tableName = 'comments'
+      Array('name', 'body', 'email').forEach((columnName) => modifyColumn(tableName,columnName,[tablesVarchar, 'NOT NULL']))
+      modifyColumn(tableName, 'postId', [tablesInt,'NOT NULL'])
+      addForeignKey(tableName,'commentPostId','postId','posts','id')
 
-    //   // passwords
-    //   tableName = 'passwords'
-    //   modifyColumn(tableName,'password',['VARCHAR(32)','NOT NULL'])
-    //   addForeignKey(tableName,'userusername','username','users','username')
+      // passwords
+      tableName = 'passwords'
+      modifyColumn(tableName,'password',['VARCHAR(32)','NOT NULL'])
+      addForeignKey(tableName,'userusername','username','users','username')
 
-    //   console.log('Wow! Everthing Is Up And Ready To Go!\nHappy Hacking!')
-  //  });
+      console.log('Wow! Everthing Is Up And Ready To Go!\nHappy Hacking!')
+   });
 });
