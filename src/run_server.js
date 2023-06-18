@@ -29,14 +29,14 @@ const validationSchema = {
         api_key: Joi.string().alphanum().min(20).required(),
         rank: Joi.string().alphanum().min(1).required(),
         name: Joi.string().alphanum().min(3).max(50),
-        email: Joi.string().pattern(new RegExp('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')),
-        phone: Joi.string().pattern(new RegExp('^\+*[0-9]{10,13}$')),
-        website: Joi.string().pattern(new RegExp('^((https?|ftp):\/\/)?[^\s/$.?#].[^\s]*$'))
+        email: Joi.string().min(3).max(100),
+        phone: Joi.string().min(3).max(20),
+        website: Joi.string().min(3).max(100)
     }),
     'comments': Joi.object({
         poatId: Joi.number().integer().min(1).required(),
         title: Joi.string().min(3).max(80).required(),
-        completed: Joi.boolean().required()
+        completed: Joi.boolean().default(0).required()
     }),
     'todos': Joi.object({
         userId: Joi.number().integer().min(1).required(),
@@ -53,7 +53,7 @@ const validationSchema = {
 
 
 const Validate = (testObject,validateType) => {
-    //const {error} = 
+    return validationSchema[validateType].validate(testObject).error
 }
 
 pathTableNames = ['posts','users','comments','todos']
@@ -79,7 +79,6 @@ const getItems = (tableName, param, value) => {
         });
     });
 }
-
 const getAuthorization = (api_key, id, authorizationType) => {
     return new Promise((resolve,reject) =>{
         databaseConnection.query('SELECT id AS userId,`rank` FROM users WHERE api_key = ?',
@@ -94,7 +93,7 @@ const getAuthorization = (api_key, id, authorizationType) => {
             if (user.rank === 'admin') return resolve(user)
             
             // choose authorization Types
-            if (authorizationType === 'users') return resolve(id === user.userId ? user : {error: "You Desn't Have Prommision To Access This Data!"})
+            if (authorizationType === 'users') return resolve(parseInt(id) === user.userId ? user : {error: "You Desn't Have Prommision To Access This Data!"})
             
             var sql;
             if (authorizationType === 'posts' || authorizationType === 'todos')
@@ -367,15 +366,14 @@ app.post('/todos', async (req,res) => {
 
 // ************ PUT DELETE ************
 
-// ------------ posts users comments todos ------------
-for (const ptName of pathTableNames){
+// ------------ posts comments todos ------------
+for (const ptName of pathTableNames.filter((value)=> value !== 'users')){
     app.put(`/${ptName}/:id`, async (req,res) => {
         // Authoretion
         const authorization = await getAuthorization(req.query.api_key, req.params.id, ptName)
         if (authorization.error) return res.status(404).send(authorization.error)
     
         // Validate
-    
     
         // Check For Existence
         let data = await checkForExistence(ptName,'id' ,req.params.id)
@@ -392,7 +390,6 @@ for (const ptName of pathTableNames){
         if (data.error) return res.status(404).send(data.error)
 
         res.send(data)
-    
     });
 
     app.delete(`/${ptName}/:id`, async (req,res) => {
@@ -415,6 +412,65 @@ for (const ptName of pathTableNames){
     });
 }
 
+// ------------ users ------------
+app.put(`/users/:id`, async (req,res) => {
+    // Authoretion
+    const authorization = await getAuthorization(req.query.api_key, req.params.id, 'users')
+    if (authorization.error) return res.status(404).send(authorization.error)
+
+    // Validate
+
+
+    // Check For Existence
+    let userData = await checkForExistence('users','id' ,req.params.id)
+    if (userData.error) return res.status(404).send(userData.error)
+    let passData = await checkForExistence('passwords','username' ,userData.username)
+    if (passData.error) return res.status(404).send(passData.error)
+
+
+    // Update the Resource
+    Object.keys(userData).forEach( key => { 
+        if (key in req.body)
+            userData[key] = req.body[key]
+    });
+    Object.keys(passData).forEach( key => { 
+        if (key in req.body)
+            passData[key] = req.body[key]
+    });
+
+    // Return the Updated Resource
+    userData = await updateToTable('users', userData)
+    if (userData.error) return res.status(404).send(userData.error)
+    passData = await updateToTable('passwords', passData)
+    if (passData.error) return res.status(404).send(passData.error)
+
+
+    res.send({...userData, ...passData})
+});
+
+app.delete(`/users/:id`, async (req,res) => {
+    // Authoretion
+    const authorization = await getAuthorization(req.query.api_key, req.params.id, 'users')
+    if (authorization.error) return res.status(404).send(authorization.error)
+
+    // Validate
+
+
+    // Check For Existence
+    let userData = await checkForExistence('users','id' ,req.params.id)
+    if (userData.error) return res.status(404).send(userData.error)
+    let passData = await checkForExistence('passwords','username' ,userData.username)
+    if (passData.error) return res.status(404).send(passData.error)
+
+    
+    // Delete the Course
+    let error  = await deleteToTable('users', userData.id)
+    if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
+    error = await deleteToTable('passwords', passData.id)
+    if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
+    
+    res.send({...userData, ...passData})
+});
 
 
 //The 404 Route
