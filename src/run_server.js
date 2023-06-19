@@ -15,7 +15,7 @@ const databaseConnection = mysql.createConnection({
 });
 
 const hostname = '127.0.0.1';
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Validation Schema
 const validationSchema = {
@@ -51,12 +51,14 @@ const validationSchema = {
 
 }
 
+// (Placehlder) Resources Names
+pathTableNames = ['posts','users','comments','todos']
 
-const Validate = (testObject,validateType) => {
+// Help Functions
+
+const validate = (testObject,validateType) => {
     return validationSchema[validateType].validate(testObject).error
 }
-
-pathTableNames = ['posts','users','comments','todos']
 
 const getTable = (tableName) => {
     return new Promise((resolve) => {
@@ -204,21 +206,25 @@ for (const ptName of pathTableNames){
         const authorization = await getAuthorization(req.query.api_key)
         if (authorization.error) return res.status(404).send(authorization.error)
 
+        // Get the Table
         const table = await getTable(ptName);
         if (table.error) return res.status(404).send(table.error)
         
+        // Send it Back
         res.send(table);
     });
 
     app.get(`/${ptName}/:id`, async (req,res) =>{
-
+        // Authoretion
         const authorization = await getAuthorization(req.query.api_key, req.params.id, ptName)
         if (authorization.error) return res.status(404).send(authorization.error)
-
+        
+        // Get the Resouce by id
         const data = await checkForExistence(ptName,'id',req.params.id)
         if (data.error) return res.status(404).send(data.error)
-        res.send(data);
 
+        // Send it Back
+        res.send(data);
     });
 }
 
@@ -226,11 +232,15 @@ for (const ptName of pathTableNames){
 // ------------ posts ------------
 // paths: (posts, postId, postId/comments)
 app.get('/posts/:id/comments', async (req,res) =>{
+    // Authoretion
     const authorization = await getAuthorization(req.query.api_key, req.params.id, 'posts')
     if (authorization.error) return res.status(404).send(authorization.error)
 
+    // Get the Resouce by id
     const data = await checkForExistence('comments','postId' ,req.params.id)
     if (data.error) return res.status(404).send(data.error)
+
+    // Send it Back
     res.send(data);
 });
 
@@ -238,20 +248,28 @@ app.get('/posts/:id/comments', async (req,res) =>{
 // ------------ users ------------
 // paths: (users, userId, userId/todos, userId/posts)
 app.get('/users/:id/todos', async (req,res) =>{
+     // Authoretion
     const authorization = await getAuthorization(req.query.api_key, req.params.id, 'users')
     if (authorization.error) return res.status(404).send(authorization.error)
 
+    // Get the Resouce by id
     const data = await checkForExistence('todos','userId' ,req.params.id)
     if (data.error) return res.status(404).send(data.error)
+
+    // Send it Back
     res.send(data);
 
 });
 app.get('/users/:id/posts', async (req,res) =>{
+    // Authoretion
     const authorization = await getAuthorization(req.query.api_key, req.params.id, 'users')
     if (authorization.error) return res.status(404).send(authorization.error)
 
+    // Get the Resouce by id
     const data = await checkForExistence('posts','userId' ,req.params.id)
     if (data.error) return res.status(404).send(data.error)
+
+    // Send it Back
     res.send(data);
 });
 
@@ -265,7 +283,7 @@ app.get('/users/:id/posts', async (req,res) =>{
 // for login user, dont forget to send username and password in the query.
 app.get('/login', (req,res) =>{
     databaseConnection.query('WITH user AS (SELECT * FROM passwords WHERE username = ? AND password = ? ) SELECT users.* FROM users JOIN user ON users.username = user.username',
-    [req.query.username,req.query.password],
+    [req.query.username, req.query.password],
         (err, result) => {
             if (err) return res.status(404).send('Something Went Wrong.. Please Try Again');
             if (result.length === 0) return res.status(404).send('Usename or Password is Not Currect')
@@ -277,31 +295,38 @@ app.get('/login', (req,res) =>{
 
 // ************ POST ************
 // No need to send id. its auto_increment.
+// data send in body, api_key never send in query.
 
 // ------------ posts ------------
 app.post('/posts', async (req,res) => {
-    // we need to get: userId, api_key, title, body
-    // this would be sent in the body.
+    // Authoretion
     const authorization = await getAuthorization(req.query.api_key, req.body.userId, 'users')
     if (authorization.error) return res.status(404).send(authorization.error)
 
+    // Create Instance
     let post = {
         userId: authorization.userId,
         title : req.body.title,
         body: req.body.body
     }
 
+    // Validate
+    const { error } = validate(post,'posts')
+    if (error) return res.status(404).send(error)
+
+    // Insert to Table
     post = await insertToTable('posts',post)
     if (post.error) return res.status(404).send(post.error)
+
+    // Send it Back
     res.send(post)
 });
 
 // ------------ users ------------
-// its the sign-up!
 app.post('/signup', async (req,res) => {
-    // Authoretion
     // Don't Need Authoretion, Because everybody can signup..
-    
+
+    // Create Instance
     let user = {
         username: req.body.username,
         api_key:  generateRandomString(20),
@@ -311,17 +336,25 @@ app.post('/signup', async (req,res) => {
         phone:    req.body.phone,
         website:  req.body.website,
     }
+
     let userpass ={
         username: req.body.username,
         password: req.body.password
     }
 
+    // Validate
+    let { error } = validate(user,'users')
+    if (error) return res.status(404).send(error)    
+    error = validate(userpass,'passwords').error
+    if (error) return res.status(404).send(error)
+
+    // Insert to Table
     user = await insertToTable('users',user)
     if (user.error) return res.status(404).send(user.error)
-
     userpass = await insertToTable('passwords',userpass)
     if (userpass.error) return res.status(404).send(userpass.error)
 
+    // Send it Back
     res.send(user)
 });
 // ------------ comments ------------
@@ -330,8 +363,7 @@ app.post('/comments', async (req,res) => {
     const authorization = await getAuthorization(req.query.api_key, req.body.postId, 'posts')
     if (authorization.error) return res.status(404).send(authorization.error)
 
-    // we need to get: api_key, title, body
-    // this would be sent in the body.
+    // Create Instance
     let comment = {
         postId: req.body.postId,
         name : req.body.name,
@@ -339,8 +371,15 @@ app.post('/comments', async (req,res) => {
         body: req.body.body
     }
 
+    // Validate
+    const { error } = validate(comment,'comments')
+    if (error) return res.status(404).send(error)
+
+    // Insert to Table
     comment = await insertToTable('comments',comment)
     if (comment.error) res.status(404).send(comment.error)
+
+    // Send it Back
     res.send(comment)
 });
 // ------------ todos ------------
@@ -349,17 +388,22 @@ app.post('/todos', async (req,res) => {
     const authorization = await getAuthorization(req.query.api_key, req.body.userId, 'users')
     if (authorization.error) return res.status(404).send(authorization.error)
 
-    // we need to get: api_key, userId, title, compleated
-    // this would be sent in the body.
+    // Create Instance
     let todo = {
         userId: authorization.userId,
         title : req.body.title,
         completed: req.body.completed
     }
 
+    // Validate
+    const { error } = validate(todo,'todos')
+    if (error) return res.status(404).send(error)
+
+    // Insert to Table
     todo = await insertToTable('todos',todo)
     if (todo.error) return res.status(404).send(todo.error)
 
+    // Send it Back
     res.send(todo)
 });
 
@@ -372,9 +416,7 @@ for (const ptName of pathTableNames.filter((value)=> value !== 'users')){
         // Authoretion
         const authorization = await getAuthorization(req.query.api_key, req.params.id, ptName)
         if (authorization.error) return res.status(404).send(authorization.error)
-    
-        // Validate
-    
+        
         // Check For Existence
         let data = await checkForExistence(ptName,'id' ,req.params.id)
         if (data.error) return res.status(404).send(data.error)
@@ -385,10 +427,15 @@ for (const ptName of pathTableNames.filter((value)=> value !== 'users')){
                 data[key] = req.body[key]
         });
 
-        // Return the Updated Resource
+        // Validate
+        const { error } = validate(data,ptName)
+        if (error) return res.status(404).send(error)
+
+        // Update the Table Resource
         data = await updateToTable(ptName, data)
         if (data.error) return res.status(404).send(data.error)
-
+        
+        // Return the Updated Resource
         res.send(data)
     });
 
@@ -396,9 +443,7 @@ for (const ptName of pathTableNames.filter((value)=> value !== 'users')){
         // Authoretion
         const authorization = await getAuthorization(req.query.api_key, req.params.id, ptName)
         if (authorization.error) return res.status(404).send(authorization.error)
-    
-        // Validate
-    
+        
     
         // Check For Existence
         let data = await checkForExistence(ptName,'id' ,req.params.id)
@@ -407,7 +452,8 @@ for (const ptName of pathTableNames.filter((value)=> value !== 'users')){
         // Delete the Course
         const { error } = await deleteToTable(ptName, data.id)
         if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
-        
+
+        // Return the Deleted Resource
         res.send(data)
     });
 }
@@ -417,9 +463,6 @@ app.put(`/users/:id`, async (req,res) => {
     // Authoretion
     const authorization = await getAuthorization(req.query.api_key, req.params.id, 'users')
     if (authorization.error) return res.status(404).send(authorization.error)
-
-    // Validate
-
 
     // Check For Existence
     let userData = await checkForExistence('users','id' ,req.params.id)
@@ -438,13 +481,19 @@ app.put(`/users/:id`, async (req,res) => {
             passData[key] = req.body[key]
     });
 
-    // Return the Updated Resource
+    // Validate
+    let { error } = validate(userData,'users')
+    if (error) return res.status(404).send(error)    
+    error = validate(passData,'passwords').error
+    if (error) return res.status(404).send(error)
+
+    // Update the Table Resource
     userData = await updateToTable('users', userData)
     if (userData.error) return res.status(404).send(userData.error)
     passData = await updateToTable('passwords', passData)
     if (passData.error) return res.status(404).send(passData.error)
 
-
+    // Return the Updated Resource
     res.send({...userData, ...passData})
 });
 
@@ -453,9 +502,6 @@ app.delete(`/users/:id`, async (req,res) => {
     const authorization = await getAuthorization(req.query.api_key, req.params.id, 'users')
     if (authorization.error) return res.status(404).send(authorization.error)
 
-    // Validate
-
-
     // Check For Existence
     let userData = await checkForExistence('users','id' ,req.params.id)
     if (userData.error) return res.status(404).send(userData.error)
@@ -463,19 +509,19 @@ app.delete(`/users/:id`, async (req,res) => {
     if (passData.error) return res.status(404).send(passData.error)
 
     
-    // Delete the Course
+    // Delete the User from both tables
     let error  = await deleteToTable('users', userData.id)
     if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
     error = await deleteToTable('passwords', passData.id)
     if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
     
+    // Return the Deleted Resource
     res.send({...userData, ...passData})
 });
 
 
 //The 404 Route
 app.get('/test', async (req,res) => {
-    // Authoretion
     res.send('Koko Lala!')
 });
 
