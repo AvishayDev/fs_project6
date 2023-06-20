@@ -90,12 +90,13 @@ const getAuthorization = (api_key, id, authorizationType) => {
             if(user.length === 0) return resolve({error: "API Dosen't Exists."});
             
             user = user[0]
+            id = parseInt(id)
 
             // check for administration
             if (user.rank === 'admin') return resolve(user)
             
             // choose authorization Types
-            if (authorizationType === 'users') return resolve(parseInt(id) === user.userId ? user : {error: "You Desn't Have Prommision To Access This Data!"})
+            if (authorizationType === 'users') return resolve(id === user.userId ? user : {error: "You Desn't Have Prommision To Access This Data!"})
             
             var sql;
             if (authorizationType === 'posts' || authorizationType === 'todos')
@@ -330,7 +331,7 @@ app.post('/signup', async (req,res) => {
     let user = {
         username: req.body.username,
         api_key:  generateRandomString(20),
-        rank:     req.body.rank,
+        rank:     'user',
         name:     req.body.name,
         email:    req.body.email,
         phone:    req.body.phone,
