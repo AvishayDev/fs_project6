@@ -102,7 +102,7 @@ const getAuthorization = (api_key, id, authorizationType) => {
             if (authorizationType === 'posts' || authorizationType === 'todos')
                 sql = `SELECT userId FROM ${authorizationType} WHERE id = ?`;
             else if (authorizationType === 'comments')
-                sql = 'WITH post AS (SELECT postId FROM comments WHERE id = ?) SELECT userId FROM posts WHERE id = post.postId'
+                sql = 'SELECT userId FROM posts WHERE id IN (SELECT postId FROM comments WHERE id = ?)'
             else
                 return resolve({error: "You Desn't Have Prommision To Access This Data!"})
             
@@ -150,6 +150,20 @@ function updateToTable(tableName, instance) {
             });
     });
 }
+
+const deletePost = (id) => {
+    return new Promise((resolve) => {
+        databaseConnection.query(`DELETE FROM comments WHERE postId = ?`,
+                [id],
+                async (err, result) => {
+                    if (err) return resolve({error: err.message});
+                    resolve(await deleteToTable('posts',id))
+        });
+
+        
+    })
+}
+
 
 const deleteToTable = (tableName, id) => {
     
@@ -451,7 +465,7 @@ for (const ptName of pathTableNames.filter((value)=> value !== 'users')){
         if (data.error) return res.status(404).send(data.error)
 
         // Delete the Course
-        const { error } = await deleteToTable(ptName, data.id)
+        const { error } = await ptName !== 'posts' ? deleteToTable(ptName, data.id) : deletePost(data.id)
         if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
 
         // Return the Deleted Resource
