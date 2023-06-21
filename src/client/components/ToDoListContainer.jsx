@@ -25,6 +25,7 @@ const StyledBox = styled(Box)({
 const TodoListContainer = () => {
     const { userId } = useParams()
     const [currentTodo, setCurrentTodo] = useState({});
+    const apiKey = localStorage.getItem("api_key");
     const [azSort, setazSort] = useState("az");
     const [completeSort, setcompleteSort] = useState(true);
     const [TodoListData, setTodoListData] = useState({
@@ -32,12 +33,12 @@ const TodoListContainer = () => {
         TodoList: [],
         error: ''
     })
-    const url = `https://jsonplaceholder.typicode.com/todos`
+    const url = `http://127.0.0.1:3001/users/${userId}/todos`
 
     useEffect(() => {
         const pull = async () => {
             try {
-                const response = await axios.get(`${url}?userId=` + userId)
+                const response = await axios.get(`${url}?api_key=` +apiKey )
                 setTodoListData({
                     ...TodoListData,
                     loading: false,
@@ -59,11 +60,11 @@ const TodoListContainer = () => {
   const addTodoItem = (todoItem) => {
     const push = async () => {
       try {
-        const response = await axios.post(`${url}`, todoItem);
-        if (response.status !== 201) {
+        const response = await axios.post(`http://127.0.0.1:3001/todos?api_key=` + apiKey, {...todoItem, userId});
+        if (response.status !== 200) {
           throw response.statusText;
         }
-        const TodoList = TodoListData.TodoList.concat(todoItem);
+        const TodoList = TodoListData.TodoList.concat(response.data);
         setTodoListData({
           ...TodoListData,
           TodoList: TodoList,
@@ -87,7 +88,7 @@ const TodoListContainer = () => {
         "Content-type": "application/json; charset=UTF-8",
       },
     };
-    const reqUrl = `${url}/${todoItem.id}`;
+    const reqUrl = `http://127.0.0.1:3001/todos/${todoItem.id}?api_key=` + apiKey;
     const result = apiRequest(reqUrl, update).then(handleEdit(todoItem));
     if (result) console.log(result);
     setCurrentTodo({});
@@ -109,7 +110,7 @@ const TodoListContainer = () => {
 
   const handleDeleteClick = (todo) => {
     const update = { method: "DELETE" };
-    const reqUrl = `${url}/${todo.id}`;
+    const reqUrl = `http://127.0.0.1:3001/todos/${todo.id}?api_key=` + apiKey;
     const result = apiRequest(reqUrl, update).then(handleDelete(todo));
     if (result) console.log(result);
   };
@@ -178,7 +179,7 @@ const TodoListContainer = () => {
         <Typography variant="h3" gutterBottom>TodoList</Typography>
       </Box>
       <Box>
-        <InputTodo addTodo={addTodoItem} user={TodoListData.userID} />
+        <InputTodo addTodo={addTodoItem} />
       </Box>
       <Box display="flex" justifyContent="center" marginTop="20px">
         {azSort !== "az" ? (

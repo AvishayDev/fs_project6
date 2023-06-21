@@ -1,18 +1,17 @@
 import React, {useState} from "react";
-import { v4 as uuidv4 } from 'uuid';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 
-const InputTodo = ({addTodo,user}) => {
+const InputTodo = ({addTodo}) => {
 
-    const [todo,setTodo] =useState({title: "",completed:false,id:uuidv4(),userId:user})
+    const [todo,setTodo] =useState({title: "",completed:false})
 
     const handleSubmit = e => {
         e.preventDefault()
         if (!todo.title) return
         addTodo(todo)
-        setTodo({...todo, title: "",id:uuidv4(),userId:user})
+        setTodo({...todo, title: ""})
     }
 
     return (

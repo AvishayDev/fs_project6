@@ -109,9 +109,9 @@ function generateRandomString(length) {
 var con = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "your-password",
+    password: "udit5756",
     port: 3306,
-    //database: 'FullStackProject6'
+    database: 'p6'
   });
   
 con.connect(async function(err) {

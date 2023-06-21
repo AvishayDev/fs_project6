@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from "react";
 import CommentDisplay from "./CommentDisplay";
+import InputPost from "./InputPost";
 import { StyledLi } from "./StyledLi";
-
 import axios from "axios";
 import { useParams } from "react-router-dom";
-
 import Button from "@mui/material/Button";
 import { Box } from "@mui/material";
 import Typography from "@mui/material/Typography";
-
+import IconButton from "@mui/material/IconButton";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import apiRequest from "../fetch/api";
+import PostItem from './PostItem'
 
 
 const PostsContainer = () => {
   const { userId } = useParams();
   const [currentPost, setCurrentPost] = useState({});
+  const [edit, setEdit] = useState(false);
+  const apiKey = localStorage.getItem("api_key");
   const [comments, setcomments] = useState(false);
   const [postData, setPostData] = useState({
     loading: true,
     postList: [],
     error: "",
   });
-  const url = `https://jsonplaceholder.typicode.com/posts?userId=` + userId;
+  const url = `http://127.0.0.1:3001/users/${userId}/posts`;
 
   useEffect(() => {
     const pull = async () => {
       try {
-        const response = await axios.get(`${url}`);
+        const response = await axios.get(`${url}?api_key=` + apiKey);
         setPostData({
           ...postData,
           loading: false,
@@ -43,6 +48,47 @@ const PostsContainer = () => {
     };
     pull();
   }, []);
+
+  const addPostItem = (postItem) => {
+    const push = async () => {
+      try {
+        const response = await axios.post(`http://127.0.0.1:3001/posts?api_key=` + apiKey, { ...postItem, userId });
+        if (response.status !== 200) {
+          throw response.statusText;
+        }
+        const PostList = postData.postList.concat(response.data);
+        setPostData({
+          ...postData,
+          postList: PostList,
+        });
+      } catch (err) {
+        setPostData({
+          ...postData,
+          loading: false,
+          error: err.massage,
+        });
+      }
+    };
+    push();
+  };
+
+  const handleEditClick = (todo) => {
+    setEdit(true);
+  };
+
+  const handleDeleteClick = (todo) => {
+    const update = { method: "DELETE" };
+    const reqUrl = `http://127.0.0.1:3001/posts/${todo.id}?api_key=` + apiKey;
+    const result = apiRequest(reqUrl, update).then(handleDelete(todo));
+    if (result) console.log(result);
+  };
+
+  const handleDelete = (todo) => {
+    const postList = postData.postList.filter(
+      (member) => member.id !== todo.id
+    );
+    setPostData({ ...postData, postList: postList });
+  };
 
   const handleChooseClick = (Post) => {
     setCurrentPost({ ...Post });
@@ -75,6 +121,9 @@ const PostsContainer = () => {
       <Typography variant="h3" gutterBottom>
         Posts
       </Typography>
+      <Box>
+        <InputPost addPost={addPostItem} />
+      </Box>
       <Box
         sx={{
           width: "80%",
@@ -95,16 +144,22 @@ const PostsContainer = () => {
                 <Button onClick={() => handleChooseClick(Post)}>Choose</Button>
               </StyledLi>
             ) : (
+
               <StyledLi key={Post.id}>
-                <Typography variant="h3" gutterBottom>
-                  {Post.title}
-                </Typography>
-                <Typography variant="h5" gutterBottom>
-                  {Post.body}
-                </Typography>
+                <PostItem Post={Post}/>
                 <Button onClick={() => handleChooseClick({})}>Unchoose</Button>
                 <Button onClick={() => setcomments(!comments)}>Comments</Button>
-                {comments ? <CommentDisplay Hi={Post.id} /> : <></>}
+                <IconButton color="primary" onClick={() => handleEditClick(Post)}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  variant="contained"
+                  onClick={() => handleDeleteClick(Post)}
+                  color="error"
+                >
+                  <DeleteIcon />
+                </IconButton>
+                {comments ? <CommentDisplay postId={Post.id} /> : <></>}
               </StyledLi>
             )
           )}

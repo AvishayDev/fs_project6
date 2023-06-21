@@ -1,7 +1,5 @@
 import TodoListContainer from "./components/ToDoListContainer";
 import PostsContainer from "./components/PostsContainer";
-import PhotosDisplay from "./components/PhotosDisplay";
-import Albums from "./components/Albums";
 import Info from "./components/Info";
 import {
   createBrowserRouter,
@@ -36,7 +34,7 @@ const StyledButton = styled(Button)`
 `;
 
 const Root = () => {
-  const [name, setName] = useState(localStorage.getItem("fullName"));
+  const [name, setName] = useState(localStorage.getItem("name"));
   return (
     (name)?(
     <>
@@ -51,9 +49,6 @@ const Root = () => {
             </StyledButton>
             <StyledButton component={Link} to="posts">
               Posts
-            </StyledButton>
-            <StyledButton component={Link} to="albums">
-              Albums
             </StyledButton>
           </div>
           <div>
@@ -89,10 +84,6 @@ const App = () => {
           <Route path="info" element={<Info />} />
           <Route path="todos" element={<TodoListContainer />} />
           <Route path="Posts" element={<PostsContainer />} />
-          <Route path="albums">
-            <Route index element={<Albums />} />
-            <Route path=":id" element={<PhotosDisplay />} />
-          </Route>
         </Route>
       </Route>
     )

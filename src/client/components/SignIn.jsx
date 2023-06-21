@@ -31,24 +31,22 @@ const SignIn = () => {
 
   const handleSubmit = async () => {
     try {
+      console.log(`user = ${userName} + password = ${password}`);
       const response = await axios.get(
-        `https://jsonplaceholder.typicode.com/users?username=${userName}`
+        `http://127.0.0.1:3001/login?username=${userName}&password=${password}`
       );
-      if (response.data[0]?.address?.geo?.lat) {
-        if (
-          password === String(response.data[0]?.address?.geo?.lat).slice(-4)
-        ) {
-          localStorage.setItem("userName", userName);
-          localStorage.setItem("password", password);
-          localStorage.setItem("fullName", response.data[0].name);
-          navigate(`/users/${response.data[0].id}/info`);
-        } else {
-          togglePopup();
-        }
+      if (response.data) {
+        const info = response.data[0]
+        localStorage.setItem('name', info['name']);
+        localStorage.setItem('api_key', info['api_key']);
+        localStorage.setItem('userInfo', JSON.stringify(response.data[0]));
+        navigate(`/users/${response.data[0].id}/info`);
       } else {
         togglePopup();
       }
+
     } catch (err) {
+      togglePopup()
       console.log(err?.message);
     }
   };
