@@ -86,10 +86,37 @@ const getItems = (tableName, param, value) => {
 const getAuthorization = (api_key, id, authorizationType) => {
     return new Promise((resolve, reject) => {
         databaseConnection.query('SELECT id AS userId,`rank` FROM users WHERE api_key = ?',
-            [api_key],
-            (err, user) => {
-                if (err) return resolve({ error: err.message });
-                if (user.length === 0) return resolve({ error: "API Dosen't Exists." });
+        [api_key],
+        (err, user) => {
+            if (err) return resolve({error: err.message});
+            if(user.length === 0) return resolve({error: "API Dosen't Exists."});
+            
+            user = user[0]
+            id = parseInt(id)
+
+            // check for administration
+            if (user.rank === 'admin') return resolve(user)
+            
+            // choose authorization Types
+            if (authorizationType === 'users') return resolve(id === user.userId ? user : {error: "You Desn't Have Prommision To Access This Data!"})
+            
+            var sql;
+            if (authorizationType === 'posts' || authorizationType === 'todos')
+                sql = `SELECT userId FROM ${authorizationType} WHERE id = ?`;
+            else if (authorizationType === 'comments')
+                sql = 'SELECT userId FROM posts WHERE id IN (SELECT postId FROM comments WHERE id = ?)'
+            else
+                return resolve({error: "You Desn't Have Prommision To Access This Data!"})
+            
+            databaseConnection.query(sql,[id], 
+                (err,result) => {
+                    if (err) return resolve({error: err.message})
+                    if (result.length === 0) return resolve({error: `There Is No ${authorizationType} with Id ${id}`})
+
+                    if (user.userId !== result[0].userId) return resolve({error: "You Desn't Have Prommision To Access This Data!"})
+
+                    return resolve(user);
+                });
 
                 user = user[0]
                 id = parseInt(id)
@@ -154,6 +181,20 @@ function updateToTable(tableName, instance) {
             });
     });
 }
+
+const deletePost = (id) => {
+    return new Promise((resolve) => {
+        databaseConnection.query(`DELETE FROM comments WHERE postId = ?`,
+                [id],
+                async (err, result) => {
+                    if (err) return resolve({error: err.message});
+                    resolve(await deleteToTable('posts',id))
+        });
+
+        
+    })
+}
+
 
 const deleteToTable = (tableName, id) => {
 
@@ -461,7 +502,7 @@ for (const ptName of pathTableNames.filter((value) => value !== 'users')) {
         if (data.error) return res.status(404).send(data.error)
 
         // Delete the Course
-        const { error } = await deleteToTable(ptName, data.id)
+        const { error } = await ptName !== 'posts' ? deleteToTable(ptName, data.id) : deletePost(data.id)
         if (error) return res.status(404).send('Something Went Wrong.. Please Try Again')
 
         // Return the Deleted Resource
