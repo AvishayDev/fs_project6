@@ -12,6 +12,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import apiRequest from "../fetch/api";
 import PostItem from './PostItem'
+import EditPost from './EditPost'
+
 
 
 const PostsContainer = () => {
@@ -72,20 +74,44 @@ const PostsContainer = () => {
     push();
   };
 
-  const handleEditClick = (todo) => {
+  const editPostItem = (postItem) => {
+    const update = {
+      method: "PUT",
+      body: JSON.stringify(postItem),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    };
+    const reqUrl = `http://127.0.0.1:3001/posts/${postItem.id}?api_key=` + apiKey;
+    const result = apiRequest(reqUrl, update).then(handleEdit(postItem));
+    if (result) console.log(result);
+    setEdit(false);
+  };
+
+  const handleEdit = (post) => {
+    const postList = postData.postList.map((member) =>
+      member.id === post.id ? (member = post) : member
+    );
+    setPostData({
+      ...postData,
+      postList: postList,
+    });
+  };
+
+  const handleEditClick = () => {
     setEdit(true);
   };
 
-  const handleDeleteClick = (todo) => {
+  const handleDeleteClick = (post) => {
     const update = { method: "DELETE" };
-    const reqUrl = `http://127.0.0.1:3001/posts/${todo.id}?api_key=` + apiKey;
-    const result = apiRequest(reqUrl, update).then(handleDelete(todo));
+    const reqUrl = `http://127.0.0.1:3001/posts/${post.id}?api_key=` + apiKey;
+    const result = apiRequest(reqUrl, update).then(handleDelete(post));
     if (result) console.log(result);
   };
 
-  const handleDelete = (todo) => {
+  const handleDelete = (post) => {
     const postList = postData.postList.filter(
-      (member) => member.id !== todo.id
+      (member) => member.id !== post.id
     );
     setPostData({ ...postData, postList: postList });
   };
@@ -146,20 +172,25 @@ const PostsContainer = () => {
             ) : (
 
               <StyledLi key={Post.id}>
-                <PostItem Post={Post}/>
-                <Button onClick={() => handleChooseClick({})}>Unchoose</Button>
-                <Button onClick={() => setcomments(!comments)}>Comments</Button>
-                <IconButton color="primary" onClick={() => handleEditClick(Post)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  variant="contained"
-                  onClick={() => handleDeleteClick(Post)}
-                  color="error"
-                >
-                  <DeleteIcon />
-                </IconButton>
-                {comments ? <CommentDisplay postId={Post.id} /> : <></>}
+                {edit ? (
+                  <EditPost key={Post.id} editPostItem={editPostItem} postItem={Post} />
+                ) : (<Box>
+                  <PostItem Post={Post} />
+                  <Button onClick={() => handleChooseClick({})}>Unchoose</Button>
+                  <Button onClick={() => setcomments(!comments)}>Comments</Button>
+                  <IconButton color="primary" onClick={() => handleEditClick(Post)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    variant="contained"
+                    onClick={() => handleDeleteClick(Post)}
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                  {comments ? <CommentDisplay postId={Post.id} /> : <></>}
+                </Box>
+                )}
               </StyledLi>
             )
           )}

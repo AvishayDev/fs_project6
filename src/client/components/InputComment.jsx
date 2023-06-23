@@ -19,7 +19,7 @@ const InputComment = ({addComment}) => {
             <Stack spacing={2} direction="row" justifyContent="center"> 
                 <TextField id="outlined-basic" label="write new comment" variant="outlined"
                 type="text" value={comment.body} placeholder="write new comment" 
-                onChange={e => setComment(comment =>({...comment,body: e.target.value}))}/>
+                onChange={e => setComment(comment =>({...comment,body: e.target.value}))} sx={{ flex: 1 }}/>
 
                 <Button variant="contained" type="submit">add comment item</Button>
             </Stack>

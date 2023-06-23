@@ -5,7 +5,8 @@ import { StyledLi } from "./StyledLi";
 const PostItem = ({ Post}) => {
     return (
         <StyledLi key={Post.id}>
-            <Box display="flex" alignItems="center">
+            <Box display="flex"
+      flexDirection="column">
                 <Typography variant="h3" gutterBottom>
                     {Post.title}
                 </Typography>

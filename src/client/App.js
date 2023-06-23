@@ -11,11 +11,12 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import SignIn from "./components/SignIn";
+import SignUp from "./components/SignUp";
 
 import Button from "@mui/material/Button";
 import { AppBar, Toolbar } from "@mui/material";
 import styled from "@mui/material/styles/styled";
-import React, { useState } from "react";
+import React from "react";
 
 const StyledButton = styled(Button)`
   && {
@@ -34,7 +35,7 @@ const StyledButton = styled(Button)`
 `;
 
 const Root = () => {
-  const [name, setName] = useState(localStorage.getItem("name"));
+  const name = localStorage.getItem("name");
   return (
     (name)?(
     <>
@@ -80,6 +81,7 @@ const App = () => {
       <Route path="/">
         <Route index element={<Navigate to="/login" />} />
         <Route path="login" element={<SignIn />} />
+        <Route path="signup" element={<SignUp />} />
         <Route path="users/:userId" element={<Root />}>
           <Route path="info" element={<Info />} />
           <Route path="todos" element={<TodoListContainer />} />

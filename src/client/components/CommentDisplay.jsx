@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import apiRequest from "../fetch/api";
+import EditComment from './EditComment'
 
 const StyledLi = styled("li")(({ theme }) => ({
   listStyleType: "none",
@@ -74,20 +75,44 @@ const CommentDisplay = ({ postId }) => {
     push();
   };
 
-  const handleEditClick = (todo) => {
-    setCurrentComment(todo);
+  const editCommentItem = (commentItem) => {
+    const update = {
+      method: "PUT",
+      body: JSON.stringify(commentItem),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    };
+    const reqUrl = `http://127.0.0.1:3001/comments/${commentItem.id}?api_key=` + apiKey;
+    const result = apiRequest(reqUrl, update).then(handleEdit(commentItem));
+    if (result) console.log(result);
+    setCurrentComment({});
   };
 
-  const handleDeleteClick = (todo) => {
+  const handleEdit = (comment) => {
+    const commentList = commentsData.commentList.map((member) =>
+      member.id === comment.id ? (member = comment) : member
+    );
+    setCommentsData({
+      ...commentsData,
+      commentList: commentList,
+    });
+  };
+
+  const handleEditClick = (comment) => {
+    setCurrentComment(comment);
+  };
+
+  const handleDeleteClick = (comment) => {
     const update = { method: "DELETE" };
-    const reqUrl = `http://127.0.0.1:3001/comments/${todo.id}?api_key=` + apiKey;
-    const result = apiRequest(reqUrl, update).then(handleDelete(todo));
+    const reqUrl = `http://127.0.0.1:3001/comments/${comment.id}?api_key=` + apiKey;
+    const result = apiRequest(reqUrl, update).then(handleDelete(comment));
     if (result) console.log(result);
   };
 
-  const handleDelete = (todo) => {
+  const handleDelete = (comment) => {
     const commentList = commentsData.commentList.filter(
-      (member) => member.id !== todo.id
+      (member) => member.id !== comment.id
     );
     setCommentsData({ ...commentsData, commentList: commentList });
   };
@@ -107,6 +132,7 @@ const CommentDisplay = ({ postId }) => {
       </Box>
       <ul>
         {commentsData.commentList.map((comment) => (
+          currentComment.id !== comment.id ? (
           <StyledLi key={comment.id}>
             <Typography variant="body1" gutterBottom>{comment.body}</Typography>
             <IconButton color="primary" onClick={() => handleEditClick(comment)}>
@@ -120,7 +146,10 @@ const CommentDisplay = ({ postId }) => {
               <DeleteIcon />
             </IconButton>
           </StyledLi>
-        ))}
+        ) : (
+          <EditComment key={comment.id} editComment={editCommentItem} commentItem={comment} />
+        ))
+        )}
       </ul>
     </div>
   );

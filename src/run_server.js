@@ -121,26 +121,24 @@ const getAuthorization = (api_key, id, authorizationType) => {
                 user = user[0]
                 id = parseInt(id)
 
-                // check for administration
-                if (user.rank === 'admin') return resolve(user)
-
-                // choose authorization Types
-                if (authorizationType === 'users') return resolve(id === user.userId ? user : { error: "You Desn't Have Prommision To Access This Data!" })
-
-                var sql;
-                if (authorizationType === 'posts' || authorizationType === 'todos')
-                    sql = `SELECT userId FROM ${authorizationType} WHERE id = ?`;
-                else if (authorizationType === 'comments')
-                    //sql = 'WITH post AS (SELECT postId FROM comments WHERE id = ?) SELECT userId FROM posts WHERE id = post.postId'
-                    sql = 'SELECT userId FROM posts WHERE id IN (SELECT postId FROM comments WHERE id = ?)'
-                    
-                else
-                    return resolve({ error: "You Desn't Have Prommision To Access This Data!" })
-
-                databaseConnection.query(sql, [id],
-                    (err, result) => {
-                        if (err) return resolve({ error: err.message })
-                        if (result.length === 0) return resolve({ error: `There Is No ${authorizationType} with Id ${id}` })
+            // check for administration
+            if (user.rank === 'admin') return resolve(user)
+            
+            // choose authorization Types
+            if (authorizationType === 'users') return resolve(id === user.userId ? user : {error: "You Desn't Have Prommision To Access This Data!"})
+            
+            var sql;
+            if (authorizationType === 'posts' || authorizationType === 'todos')
+                sql = `SELECT userId FROM ${authorizationType} WHERE id = ?`;
+            else if (authorizationType === 'comments')
+                sql = 'SELECT userId FROM posts WHERE id IN (SELECT postId FROM comments WHERE id = ?)'
+            else
+                return resolve({error: "You Desn't Have Prommision To Access This Data!"})
+            
+            databaseConnection.query(sql,[id], 
+                (err,result) => {
+                    if (err) return resolve({error: err.message})
+                    if (result.length === 0) return resolve({error: `There Is No ${authorizationType} with Id ${id}`})
 
                         if (user.userId !== result[0].userId) return resolve({ error: "You Desn't Have Prommision To Access This Data!" })
 
@@ -152,21 +150,20 @@ const getAuthorization = (api_key, id, authorizationType) => {
 }
 
 const insertToTable = (tableName, instance) => {
-
-    return new Promise((resolve, reject) => {
+    
+    return new Promise((resolve,reject) => {
         databaseConnection.query(`INSERT INTO ${tableName} SET ?`,
-            instance,
-            (err, result) => {
-                if (err) return resolve({ error: err.message });
-
-                databaseConnection.query(`SELECT count(*) AS len FROM ${tableName}`,
-                    (err2, result2) => {
-                        if (err) return resolve({ error: err2.message });
-
-                        instance.id = result2[0].len
-                        resolve(instance)
-                    })
-            });
+        instance,
+        (err, result) => {
+            if (err) return resolve({error: err.message});
+                
+            databaseConnection.query(`SELECT * FROM ${tableName} WHERE ` + 
+            Object.keys(instance).map((key) => key === 'rank' ? '`rank` = ?': `${key} = ?`).join(' AND '), Object.values(instance),
+            (err2,result2) => {
+                if (err2) return resolve({error: err2.message});
+                resolve(result2)
+            })
+        });
     })
 }
 
@@ -272,7 +269,7 @@ for (const ptName of pathTableNames) {
         // Send it Back
         res.send(data);
     });
-}
+}  
 
 
 // ------------ posts ------------

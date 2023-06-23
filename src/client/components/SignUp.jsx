@@ -19,32 +19,48 @@ const Popup = styled(Snackbar)`
   }
 `;
 
-const SignIn = () => {
+const SignUp = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-
-  const togglePopup = () => {
-    setShowPopup(!showPopup);
-  };
 
   useEffect(() => {
     localStorage.clear()
 }, [])
 
+  const togglePopup = () => {
+    setShowPopup(!showPopup);
+  };
+
   const handleSubmit = async () => {
     try {
-      console.log(`username = ${username}, password = ${password}`);
-      const response = await axios.get(
-        `http://127.0.0.1:3001/login?username=${username}&password=${password}`
+      console.log(
+        `username = ${username}, password = ${password}, name = ${name}, email = ${email}, phone = ${phone}, website = ${website}`
       );
+
+      // Send the sign-up request to the server using axios or fetch
+      // Example using axios:
+      const response = await axios.post("http://127.0.0.1:3001/signup", {
+        username,
+        password,
+        name,
+        email,
+        phone,
+        website,
+      });
+
+      // Handle the response and navigate to the appropriate page
       if (response.data) {
         const info = response.data[0];
         localStorage.setItem("name", info["name"]);
         localStorage.setItem("api_key", info["api_key"]);
         localStorage.setItem("userInfo", JSON.stringify(response.data[0]));
-        navigate(`/users/${response.data[0].id}/info`);
+        navigate(`/users/${response.data[0].id}/info`); // Replace with the appropriate success page
       } else {
         togglePopup();
       }
@@ -83,12 +99,40 @@ const SignIn = () => {
           placeholder={"Password..."}
           onKeyDown={handleKeyDown}
         />
+        <StyledInput
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={"Name..."}
+          onKeyDown={handleKeyDown}
+        />
+        <StyledInput
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={"Email..."}
+          onKeyDown={handleKeyDown}
+        />
+        <StyledInput
+          type="text"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder={"Phone..."}
+          onKeyDown={handleKeyDown}
+        />
+        <StyledInput
+          type="text"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          placeholder={"Website..."}
+          onKeyDown={handleKeyDown}
+        />
         <Button variant="contained" onClick={handleSubmit}>
-          Login
+          Sign Up
         </Button>
-        <Link to="/signup">
+        <Link to="/login">
           <Button variant="text" color="primary">
-            Don't have an account? Sign Up
+            Already have an account? Sign In
           </Button>
         </Link>
       </Box>
@@ -97,7 +141,7 @@ const SignIn = () => {
         open={showPopup}
         autoHideDuration={2000}
         onClose={togglePopup}
-        message="Incorrect username or password"
+        message="Sign-up failed"
         anchorOrigin={{
           vertical: "top",
           horizontal: "center",
@@ -107,4 +151,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default SignUp;
